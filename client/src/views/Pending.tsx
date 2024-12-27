@@ -1,20 +1,23 @@
 import React, { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import { join } from "../model/api"; // Correctly import the `join` API function
+import { join } from "../model/api";
+import { selectPendingGame } from "../slices/pending_games_slice"; // Optional selector import
 
 const Pending = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Get pending game and ongoing game by ID
+  // Fetch pending game and ongoing game
   const pendingGame = useSelector((state) =>
-    state.pendingGames.game(parseInt(id))
+    state.pendingGames.gameList.find((g) => g.id === parseInt(id, 10))
   );
+
   const ongoingGame = useSelector((state) =>
-    state.ongoingGames.game(parseInt(id))
+    state.ongoingGames.gameList.find((g) => g.id === parseInt(id, 10))
   );
+
   const player = useSelector((state) => state.player.player);
 
   const canJoin = useMemo(() => {
@@ -39,10 +42,10 @@ const Pending = () => {
   const handleJoin = async () => {
     if (canJoin && pendingGame) {
       try {
-        await join(pendingGame, player); // Use the correct API function
+        await join(pendingGame, player);
         dispatch({
           type: "pendingGames/remove",
-          payload: { id: pendingGame.id }, // Use the teacher's "remove" logic
+          payload: { id: pendingGame.id },
         });
       } catch (error) {
         console.error("Error joining the game:", error);
