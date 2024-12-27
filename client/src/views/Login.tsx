@@ -1,64 +1,34 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { setPlayer } from "../slices/player_slice";
 
 const Login = () => {
-  const [playerName, setPlayerName] = useState("");
+  const [username, setUsername] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
-  const currentPlayer = useSelector((state) => state.player.player);
-
-  // Enable login button if a name is entered
-  const isLoginEnabled = playerName.trim() !== "";
 
   const handleLogin = () => {
-    if (isLoginEnabled) {
-      dispatch(setPlayer(playerName));
-
-      const queryParams = new URLSearchParams(location.search);
-      const gameId = queryParams.get("game");
-      const pendingId = queryParams.get("pending");
-
-      if (gameId) {
-        navigate(`/game/${gameId}`);
-      } else if (pendingId) {
-        navigate(`/pending/${pendingId}`);
-      } else {
-        navigate("/");
-      }
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && isLoginEnabled) {
-      e.preventDefault();
-      handleLogin();
-    }
-  };
-
-  useEffect(() => {
-    if (currentPlayer) {
+    if (username.trim()) {
+      dispatch(setPlayer(username));
       navigate("/");
+    } else {
+      console.log("Username cannot be empty.");
     }
-  }, [currentPlayer, navigate]);
+  };
+
+  console.log("Login component rendering...");
 
   return (
-    <div className="login">
+    <div style={{ textAlign: "center", padding: "50px" }}>
       <h1>Login</h1>
-      <div>
-        Username:{" "}
-        <input
-          type="text"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <button disabled={!isLoginEnabled} onClick={handleLogin}>
-          Login
-        </button>
-      </div>
+      <input
+        type="text"
+        placeholder="Enter username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
 };

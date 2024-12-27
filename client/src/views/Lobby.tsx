@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import api from "../model/api";
+import { new_game } from "../model/api";
 
 const Lobby = () => {
   const [numberOfPlayers, setNumberOfPlayers] = useState(2);
@@ -11,7 +11,7 @@ const Lobby = () => {
   const handleNewGame = async () => {
     if (player) {
       try {
-        const pendingGame = await api.newGame(numberOfPlayers, player);
+        const pendingGame = await new_game(numberOfPlayers, player);
         navigate(`/pending/${pendingGame.id}`);
       } catch (error) {
         console.error("Error creating a new game:", error);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import { rerollDice } from "../redux/ongoingGamesSlice";
+import { reroll } from "../model/api";
 
 const DiceRoll = ({ game, player, enabled }) => {
   const [held, setHeld] = useState([false, false, false, false, false]);
@@ -17,11 +17,17 @@ const DiceRoll = ({ game, player, enabled }) => {
     }
   }, [rerollEnabled]);
 
-  const handleReroll = () => {
-    const heldIndices = held
-      .map((isHeld, index) => (isHeld ? index : undefined))
-      .filter((index) => index !== undefined);
-    dispatch(rerollDice({ gameId: game.id, heldIndices, player }));
+  const handleReroll = async () => {
+    try {
+      const heldIndices = held
+        .map((isHeld, index) => (isHeld ? index : undefined))
+        .filter((index) => index !== undefined);
+
+      const updatedGame = await reroll(game, heldIndices, player); // Call `reroll`
+      dispatch(updatedGame(updatedGame)); // Dispatch Redux action to update game state
+    } catch (error) {
+      console.error("Failed to reroll:", error); // Handle errors
+    }
   };
 
   return (

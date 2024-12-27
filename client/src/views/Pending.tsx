@@ -1,25 +1,19 @@
-// Converted Pending Component (React)
-
 import React, { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  selectPendingGameById,
-  removePendingGame,
-} from "../slices/pending_games_slice";
-import { selectGameById } from "../slices/ongoing_games_slice";
-import api from "../model/api";
+import { join } from "../model/api"; // Correctly import the `join` API function
 
 const Pending = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Get pending game and ongoing game by ID
   const pendingGame = useSelector((state) =>
-    selectPendingGameById(state, parseInt(id))
+    state.pendingGames.game(parseInt(id))
   );
   const ongoingGame = useSelector((state) =>
-    selectGameById(state, parseInt(id))
+    state.ongoingGames.game(parseInt(id))
   );
   const player = useSelector((state) => state.player.player);
 
@@ -45,8 +39,11 @@ const Pending = () => {
   const handleJoin = async () => {
     if (canJoin && pendingGame) {
       try {
-        await api.joinGame(pendingGame.id, player);
-        dispatch(removePendingGame(pendingGame.id));
+        await join(pendingGame, player); // Use the correct API function
+        dispatch({
+          type: "pendingGames/remove",
+          payload: { id: pendingGame.id }, // Use the teacher's "remove" logic
+        });
       } catch (error) {
         console.error("Error joining the game:", error);
       }

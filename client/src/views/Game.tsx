@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import { selectGameById, fetchGames } from "../slices/ongoing_games_slice";
+import fetchGames from "../slices/ongoing_games_slice";
 import DiceRoll from "../components/DiceRoll";
 import ScoreCard from "../components/ScoreCard";
 
@@ -10,9 +10,10 @@ const Game = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const game = useSelector((state) => selectGameById(state, parseInt(id)));
+  const games = useSelector((state) => state.ongoingGames.gameList);
   const player = useSelector((state) => state.player.player);
 
+  const [game, setGame] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [finished, setFinished] = useState(false);
   const [standings, setStandings] = useState([]);
@@ -22,28 +23,22 @@ const Game = () => {
       navigate(`/login?game=${id}`);
       return;
     }
-    if (!game) {
-      navigate("/");
-      return;
-    }
 
-    setEnabled(game && player === game.players[game.playerInTurn]);
-    setFinished(game && game.isFinished); // Replace `isFinished` with the actual logic
+    const foundGame = games.find((game) => game.id === parseInt(id, 10));
+    if (!foundGame) {
+      dispatch(fetchGames());
+    } else {
+      setGame(foundGame);
+      setEnabled(player === foundGame.players[foundGame.playerInTurn]);
+      setFinished(foundGame.isFinished); // Replace `isFinished` with the actual logic
 
-    if (game) {
-      const scores = game.scores; // Replace with the actual scoring logic
+      const scores = foundGame.scores || []; // Replace with the actual scoring logic
       const sortedStandings = scores
-        .map((score, index) => [game.players[index], score])
+        .map((score, index) => [foundGame.players[index], score])
         .sort((a, b) => b[1] - a[1]);
       setStandings(sortedStandings);
     }
-  }, [game, player, navigate, id]);
-
-  useEffect(() => {
-    if (!game) {
-      dispatch(fetchGames());
-    }
-  }, [dispatch, game]);
+  }, [games, player, id, navigate, dispatch]);
 
   return (
     <div className="game">

@@ -1,10 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const initialState = {
+  player: undefined,
+};
+
 const playerSlice = createSlice({
   name: "player",
-  initialState: {
-    player: undefined, // Current player name
-  },
+  initialState,
   reducers: {
     setPlayer(state, action) {
       state.player = action.payload;
