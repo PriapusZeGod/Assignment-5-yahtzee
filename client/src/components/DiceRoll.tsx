@@ -13,7 +13,7 @@ const DiceRoll = ({ game, player, enabled }) => {
 
   useEffect(() => {
     if (!rerollEnabled) {
-      setHeld([false, false, false, false, false]);
+      setHeld([true, true, true, true, true]);
     }
   }, [rerollEnabled]);
 
