@@ -1,0 +1,64 @@
+.game-layout {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.scorecard-container {
+  flex: 2;
+  border: 1px solid black;
+  padding: 1rem;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.dice-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scorecard-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.scorecard-container th,
+.scorecard-container td {
+  border: 1px solid black;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.reroll-button:hover {
+  background-color: #0056b3;
+}
+
+.dice-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dice-image {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.dice-image.selected {
+  border: 2px solid blue;
+  border-radius: 5px;
+}
+
+.reroll-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}

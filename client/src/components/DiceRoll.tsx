@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { reroll } from "../model/api";
 
 const DiceRoll = ({ game, player, enabled }) => {
-  const [held, setHeld] = useState([false, false, false, false, false]);
+  const [held, setHeld] = useState([true, true, true, true, true]);
   const dispatch = useDispatch();
 
   const rerollEnabled = useMemo(
@@ -23,32 +23,37 @@ const DiceRoll = ({ game, player, enabled }) => {
         .map((isHeld, index) => (isHeld ? index : undefined))
         .filter((index) => index !== undefined);
 
-      const updatedGame = await reroll(game, heldIndices, player); // Call `reroll`
-      dispatch(updatedGame(updatedGame)); // Dispatch Redux action to update game state
+      const updatedGame = await reroll(game, heldIndices, player);
+
+      // Dispatch Redux action to update game state
+      dispatch({
+        type: "ongoingGames/update",
+        payload: updatedGame,
+      });
     } catch (error) {
-      console.error("Failed to reroll:", error); // Handle errors
+      console.error("Failed to reroll:", error);
     }
   };
 
-  return (
-    <div className="dice">
-      {!enabled && (
-        <div className="diceheader">
-          {game.players[game.playerInTurn]} is playing
-        </div>
-      )}
-      <div className="die" />
-      {game.roll.map((value, index) => (
-        <div key={index} className={`die die${value}`}>
-          {value}
-        </div>
-      ))}
-      {enabled && rerollEnabled && <div className="caption">Hold:</div>}
-      {enabled &&
-        rerollEnabled &&
-        game.roll.map((_, index) => (
+  const renderDiceImage = (value, index) => (
+    <div key={index} className="dice-container">
+      <img
+        src={`/assets/${value}.png`}
+        alt={`Die value ${value}`}
+        className={`dice-image ${held[index] ? "selected" : ""}`}
+        onClick={() => {
+          if (enabled && rerollEnabled) {
+            setHeld((prev) => {
+              const newHeld = [...prev];
+              newHeld[index] = !newHeld[index];
+              return newHeld;
+            });
+          }
+        }}
+      />
+      {enabled && rerollEnabled && (
+        <div className="checkbox-container">
           <input
-            key={index}
             type="checkbox"
             checked={held[index]}
             onChange={() =>
@@ -59,11 +64,25 @@ const DiceRoll = ({ game, player, enabled }) => {
               })
             }
           />
-        ))}
-      {enabled && rerollEnabled && (
-        <div className="reroll">
-          <button onClick={handleReroll}>Re-roll</button>
         </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="dice-roll">
+      <div className="dice-header">
+        {enabled
+          ? "Your turn to roll!"
+          : `${game.players[game.playerInTurn]} is playing`}
+      </div>
+      <div className="dice-list">
+        {game.roll.map((value, index) => renderDiceImage(value, index))}
+      </div>
+      {enabled && rerollEnabled && (
+        <button className="reroll-button" onClick={handleReroll}>
+          Re-roll
+        </button>
       )}
     </div>
   );

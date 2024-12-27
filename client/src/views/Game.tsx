@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import fetchGames from "../slices/ongoing_games_slice";
 import DiceRoll from "../components/DiceRoll";
 import ScoreCard from "../components/ScoreCard";
+import "../style.css";
 
 const Game = () => {
   const { id } = useParams();
@@ -43,48 +44,26 @@ const Game = () => {
   return (
     <div className="game">
       {game && player && (
-        <>
-          <div className="meta">
-            <h1>Game #{id}</h1>
-          </div>
-          <ScoreCard
-            className="card"
-            game={game}
-            player={player}
-            enabled={enabled}
-          />
-          {!finished && (
-            <DiceRoll
-              className="roll"
+        <div className="game-layout">
+          <div className="scorecard-container">
+            <ScoreCard
+              className="card"
               game={game}
               player={player}
               enabled={enabled}
             />
-          )}
-          {finished && (
-            <div className="scoreboard">
-              <table>
-                <thead>
-                  <tr>
-                    <td>Player</td>
-                    <td>Score</td>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standings.map(([playerName, score]) => (
-                    <tr
-                      key={playerName}
-                      className={playerName === player ? "current" : ""}
-                    >
-                      <td>{playerName}</td>
-                      <td>{score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
+          </div>
+          <div className="dice-container">
+            {!finished && (
+              <DiceRoll
+                className="roll"
+                game={game}
+                player={player}
+                enabled={enabled}
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

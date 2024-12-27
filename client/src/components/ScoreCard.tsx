@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { upsert } from "../slices/ongoing_games_slice";
+import { register } from "../model/api";
 import {
   total_upper,
   total_lower,
@@ -12,29 +12,18 @@ import { score } from "../../../models/src/model/yahtzee.slots";
 const ScoreCard = ({ game, player, enabled }) => {
   const dispatch = useDispatch();
 
-  // Fallback for game.die_values
   const dieValues = game?.die_values || [];
   const players = game?.players || [];
   const upperSections = game?.upper_sections || [];
   const lowerSections = game?.lower_sections || [];
 
-  console.log("Debugging ScoreCard:", {
-    dieValues,
-    players,
-    upperSections,
-    lowerSections,
-  });
-
-  const handleRegister = (key) => {
+  const handleRegister = async (key) => {
     if (enabled) {
-      dispatch(
-        upsert({
-          ...game,
-          id: game.id,
-          slot: key,
-          player,
-        })
-      );
+      try {
+        await register(game, key, player);
+      } catch (error) {
+        console.error("Error registering score:", error);
+      }
     }
   };
 
@@ -45,7 +34,7 @@ const ScoreCard = ({ game, player, enabled }) => {
     const sections = isUpper ? upperSections : lowerSections;
     return players.map((p, i) => ({
       player: p,
-      score: sections[i]?.scores?.[key],
+      score: sections[i]?.scores?.[key] ?? null,
     }));
   };
 
@@ -57,8 +46,8 @@ const ScoreCard = ({ game, player, enabled }) => {
   const activeClass = (p) => (p === player ? "activeplayer" : undefined);
 
   return (
-    <div className="score">
-      <table className="scorecard">
+    <div className="scorecard-container">
+      <table className="scorecard" style={{ border: "1px solid black" }}>
         <tbody>
           {/* Upper Section */}
           <tr className="section_header">
@@ -75,23 +64,27 @@ const ScoreCard = ({ game, player, enabled }) => {
           </tr>
           {dieValues.map((val) => (
             <tr key={val}>
-              <td>{val}s</td>
+              <td>
+                <img
+                  src={`/assets/${val}.png`}
+                  alt={`${val}`}
+                  className="dice-image"
+                />
+              </td>
               <td>{3 * val}</td>
               {getPlayerScores(val, true).map(({ player: p, score }) => (
                 <td
                   key={p}
                   className={
-                    isActive(p) && score === undefined
+                    isActive(p) && score === null
                       ? "clickable potential"
                       : activeClass(p)
                   }
                   onClick={() =>
-                    isActive(p) && score === undefined && handleRegister(val)
+                    isActive(p) && score === null && handleRegister(val)
                   }
                 >
-                  {isActive(p) && score === undefined
-                    ? getPotentialScore(val, true)
-                    : score ?? "-"}
+                  {score ?? (isActive(p) ? getPotentialScore(val, true) : "-")}
                 </td>
               ))}
             </tr>
@@ -135,17 +128,15 @@ const ScoreCard = ({ game, player, enabled }) => {
                 <td
                   key={p}
                   className={
-                    isActive(p) && score === undefined
+                    isActive(p) && score === null
                       ? "clickable potential"
                       : activeClass(p)
                   }
                   onClick={() =>
-                    isActive(p) && score === undefined && handleRegister(key)
+                    isActive(p) && score === null && handleRegister(key)
                   }
                 >
-                  {isActive(p) && score === undefined
-                    ? getPotentialScore(key, false)
-                    : score ?? "-"}
+                  {score ?? (isActive(p) ? getPotentialScore(key, false) : "-")}
                 </td>
               ))}
             </tr>
