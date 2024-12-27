@@ -31,9 +31,9 @@ const Game = () => {
     } else {
       setGame(foundGame);
       setEnabled(player === foundGame.players[foundGame.playerInTurn]);
-      setFinished(foundGame.isFinished); // Replace `isFinished` with the actual logic
+      setFinished(foundGame.isFinished);
 
-      const scores = foundGame.scores || []; // Replace with the actual scoring logic
+      const scores = foundGame.scores || [];
       const sortedStandings = scores
         .map((score, index) => [foundGame.players[index], score])
         .sort((a, b) => b[1] - a[1]);
@@ -42,29 +42,54 @@ const Game = () => {
   }, [games, player, id, navigate, dispatch]);
 
   return (
-    <div className="game">
-      {game && player && (
-        <div className="game-layout">
-          <div className="scorecard-container">
+    <div className="game-layout">
+      {/* Header */}
+      <div className="header">
+        <h1>Yahtzee!</h1>
+        <p>Welcome player {player}</p>
+        <h2>Game #{id}</h2>
+      </div>
+
+      {/* Main Content */}
+      <div className="content">
+        {/* Left: Scorecard */}
+        <div className="scorecard-container">
+          {game && (
             <ScoreCard
               className="card"
               game={game}
               player={player}
               enabled={enabled}
             />
-          </div>
-          <div className="dice-container">
-            {!finished && (
-              <DiceRoll
-                className="roll"
-                game={game}
-                player={player}
-                enabled={enabled}
-              />
-            )}
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Center: Dice Roll */}
+        <div className="dice-container">
+          {!finished && game && (
+            <DiceRoll
+              className="roll"
+              game={game}
+              player={player}
+              enabled={enabled}
+            />
+          )}
+        </div>
+
+        {/* Right: Navigation */}
+        <div className="navigation">
+          <a href="/">Lobby</a>
+          <h3>My Games</h3>
+          <ul>
+            <li>Ongoing</li>
+            <li>
+              <a href={`/game/${id}`}>Game #{id}</a>
+            </li>
+          </ul>
+          <h3>Waiting for players</h3>
+          <h3>Available Games</h3>
+        </div>
+      </div>
     </div>
   );
 };

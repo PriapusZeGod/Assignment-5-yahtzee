@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { register } from "../model/api";
 import {
   lower_section_keys,
@@ -13,6 +13,8 @@ import { score } from "../../../models/src/model/yahtzee.slots";
 const ScoreCard = ({ game, player, enabled }) => {
   const { players, upper_sections, lower_sections } = game;
 
+  const [hoveredCell, setHoveredCell] = useState(null); // Tracks the hovered cell
+
   const handleRegister = (key, isUpper) => {
     if (enabled) {
       register(game, key, player);
@@ -21,6 +23,12 @@ const ScoreCard = ({ game, player, enabled }) => {
 
   const isActive = (p) =>
     game.players[game.playerInTurn] === player && player === p;
+
+  const getPotentialScore = (key, isUpper) => {
+    return isUpper
+      ? score(upper_section_slots[key], game.roll)
+      : score(lower_section_slots[key], game.roll);
+  };
 
   const displayScore = (score) => {
     if (score === undefined || score === null) return "---";
@@ -49,7 +57,7 @@ const ScoreCard = ({ game, player, enabled }) => {
           {die_values.map((val) => (
             <tr key={val}>
               <td>{val}s</td>
-              <td>{val * 3}</td> {/* Example Target */}
+              <td>{val * 3}</td>
               {players.map((p, i) => (
                 <td
                   key={p}
@@ -58,13 +66,23 @@ const ScoreCard = ({ game, player, enabled }) => {
                       ? "clickable potential"
                       : activeClass(p)
                   }
+                  onMouseEnter={() =>
+                    isActive(p) && upper_sections[i]?.scores[val] === undefined
+                      ? setHoveredCell({ key: val, isUpper: true })
+                      : setHoveredCell(null)
+                  }
+                  onMouseLeave={() => setHoveredCell(null)}
                   onClick={() =>
                     isActive(p) &&
                     upper_sections[i]?.scores[val] === undefined &&
                     handleRegister(val, true)
                   }
                 >
-                  {displayScore(upper_sections[i]?.scores[val])}
+                  {isActive(p) &&
+                  hoveredCell?.key === val &&
+                  hoveredCell?.isUpper
+                    ? getPotentialScore(val, true)
+                    : displayScore(upper_sections[i]?.scores[val])}
                 </td>
               ))}
             </tr>
@@ -108,7 +126,7 @@ const ScoreCard = ({ game, player, enabled }) => {
           {lower_section_keys.map((key) => (
             <tr key={key}>
               <td>{key.charAt(0).toUpperCase() + key.slice(1)}</td>
-              <td></td> {/* Example Target */}
+              <td></td>
               {players.map((p, i) => (
                 <td
                   key={p}
@@ -117,13 +135,23 @@ const ScoreCard = ({ game, player, enabled }) => {
                       ? "clickable potential"
                       : activeClass(p)
                   }
+                  onMouseEnter={() =>
+                    isActive(p) && lower_sections[i]?.scores[key] === undefined
+                      ? setHoveredCell({ key, isUpper: false })
+                      : setHoveredCell(null)
+                  }
+                  onMouseLeave={() => setHoveredCell(null)}
                   onClick={() =>
                     isActive(p) &&
                     lower_sections[i]?.scores[key] === undefined &&
                     handleRegister(key, false)
                   }
                 >
-                  {displayScore(lower_sections[i]?.scores[key])}
+                  {isActive(p) &&
+                  hoveredCell?.key === key &&
+                  !hoveredCell?.isUpper
+                    ? getPotentialScore(key, false)
+                    : displayScore(lower_sections[i]?.scores[key])}
                 </td>
               ))}
             </tr>
@@ -134,10 +162,12 @@ const ScoreCard = ({ game, player, enabled }) => {
             {players.map((p, i) => (
               <td key={p} className={activeClass(p)}>
                 {lower_sections?.[i]?.scores
-                  ? Object.values(lower_sections[i]?.scores).reduce(
-                      (acc, score) => acc + (score ?? 0),
-                      0
-                    )
+                  ? Object.values(
+                      lower_sections[i]?.scores as Record<
+                        string,
+                        number | null | undefined
+                      >
+                    ).reduce<number>((acc, score) => acc + (score ?? 0), 0)
                   : "---"}
               </td>
             ))}

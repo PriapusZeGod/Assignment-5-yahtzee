@@ -1,22 +1,30 @@
 .game-layout {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.content {
+  display: flex;
   justify-content: space-between;
+  width: 90%;
   gap: 1rem;
 }
 
+/* Left Column: Scorecard */
 .scorecard-container {
   flex: 2;
   border: 1px solid black;
   padding: 1rem;
   border-radius: 5px;
   background-color: #f9f9f9;
-}
-
-.dice-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .scorecard-container table {
@@ -31,14 +39,13 @@
   text-align: center;
 }
 
-.reroll-button:hover {
-  background-color: #0056b3;
-}
-
+/* Center Column: Dice Container */
 .dice-container {
+  flex: 1;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 10px;
 }
 
 .dice-image {
@@ -62,3 +69,58 @@
   border-radius: 5px;
   cursor: pointer;
 }
+
+.reroll-button:hover {
+  background-color: #0056b3;
+}
+
+/* Right Column: Navigation */
+.navigation {
+  flex: 1;
+  max-width: 20%;
+  text-align: left;
+  padding-left: 20px;
+}
+
+.navigation a {
+  text-decoration: none;
+  color: #007bff;
+}
+
+.navigation a:hover {
+  text-decoration: underline;
+}
+
+.navigation ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.navigation ul li {
+  margin: 5px 0;
+}
+
+/* Additional Styling for Neatness */
+.scorecard-container table th {
+  font-weight: bold;
+  background-color: #f1f1f1;
+}
+
+.section_header {
+  font-weight: bold;
+  text-align: center;
+  background-color: #e9ecef;
+}
+
+.activeplayer {
+  font-weight: bold;
+  color: blue;
+}
+
+.clickable:hover {
+  cursor: pointer;
+  background-color: #f0f0f0;
+}
+
+.potential:hover {
+  background-color: #dff0d8;
