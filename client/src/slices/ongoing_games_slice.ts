@@ -8,32 +8,33 @@ const ongoingGamesSlice = createSlice({
   name: "ongoingGames",
   initialState,
   reducers: {
-    games(state) {
-      return state.gameList;
-    },
-    game(state, action) {
-      const id = action.payload;
-      return state.gameList.find((g) => g.id === id);
-    },
-    update(state, action) {
-      const game = action.payload;
-      const index = state.gameList.findIndex((g) => g.id === game.id);
-      if (index > -1) {
-        state.gameList[index] = game;
-        return game;
-      }
-    },
     upsert(state, action) {
       const game = action.payload;
-      if (state.gameList.some((g) => g.id === game.id)) {
-        const index = state.gameList.findIndex((g) => g.id === game.id);
+      console.log(
+        `[Ongoing Games Slice] Upserting game for player ${state.player}:`,
+        game
+      );
+
+      const index = state.gameList.findIndex((g) => g.id === game.id);
+      if (index > -1) {
+        // Update existing game
         state.gameList[index] = game;
+        console.log(`[Ongoing Games Slice] Updated game at index ${index}`);
+        console.log("Updated game state:", state.gameList[index]);
       } else {
+        // Add new game
         state.gameList.push(game);
+        console.log("[Ongoing Games Slice] Added new game:", game);
       }
     },
   },
 });
 
-export const { games, game, update, upsert } = ongoingGamesSlice.actions;
+export const { upsert } = ongoingGamesSlice.actions;
+
+// Selectors
+export const selectGames = (state) => state.ongoingGames.gameList;
+export const selectGameById = (state, id) =>
+  state.ongoingGames.gameList.find((g) => g.id === id);
+
 export default ongoingGamesSlice.reducer;

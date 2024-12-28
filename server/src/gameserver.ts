@@ -1,10 +1,13 @@
 import express, { type Express, type Request, type Response } from "express";
 import bodyParser from "body-parser";
+import cors from "cors";
 import create_api from "./api";
 import { IndexedGame, PendingGame } from "./servermodel";
+import { Subject } from "rxjs";
 import { WebSocket } from "ws";
 import { DieValue } from "models/src/model/dice";
 import { LowerSectionKey } from "models/src/model/yahtzee.score";
+import { all_games, all_pending_games } from "./servermodel";
 
 interface TypedRequest<BodyType> extends Request {
   body: BodyType;
@@ -16,11 +19,19 @@ type RawAction =
 
 type Action = RawAction & { player: string };
 
+const messageSubject = new Subject<any>();
+
 function start_server(ws: WebSocket) {
   const api = create_api(ws);
   const gameserver: Express = express();
 
-  gameserver.use(function (_, res, next) {
+  gameserver.use(
+    cors({
+      origin: "http://localhost:5173",
+    })
+  );
+
+  gameserver.use((_, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header(
       "Access-Control-Allow-Headers",
@@ -30,7 +41,17 @@ function start_server(ws: WebSocket) {
     next();
   });
 
+  gameserver.listen(8080, () => {
+    console.log("Gameserver listening on 8080");
+    console.log("Available ongoing games at startup:", all_games());
+    console.log("Available pending games at startup:", all_pending_games());
+  });
+
   gameserver.use(bodyParser.json());
+
+  ws.onopen = () => console.log("WebSocket connection to Pub/Sub established."); // New log
+  ws.onerror = (error) => console.error("WebSocket error to Pub/Sub:", error); // New log
+  ws.onclose = () => console.log("WebSocket connection to Pub/Sub closed."); // New log
 
   gameserver.post(
     "/pending-games",
@@ -41,35 +62,22 @@ function start_server(ws: WebSocket) {
       const { creator, number_of_players } = req.body;
       const game = api.new_game(creator, number_of_players);
       res.send(game);
-      api.broadcast(game);
+      messageSubject.next({ type: "gameUpdate", payload: game });
     }
   );
 
-  gameserver.get(
+  gameserver.post(
     "/pending-games",
-    async (_: Request, res: Response<Readonly<PendingGame[]>>) => {
-      const games = api.pending_games();
-      res.send(games);
-    }
-  );
-
-  gameserver.get(
-    "/pending-games/:id",
-    async (req: Request, res: Response<PendingGame>) => {
-      const games = api.pending_games();
-      const g = games.find((g) => g.id === parseInt(req.params.id));
-      if (!g) res.status(404).send();
-      else res.send(g);
-    }
-  );
-
-  gameserver.get(
-    "/pending-games/:id/players",
-    async (req: Request, res: Response<string[]>) => {
-      const games = api.pending_games();
-      const g = games.find((g) => g.id === parseInt(req.params.id));
-      if (!g) res.status(404).send();
-      else res.send(g.players);
+    async (
+      req: TypedRequest<{ creator: string; number_of_players: number }>,
+      res: Response<PendingGame | IndexedGame>
+    ) => {
+      const { creator, number_of_players } = req.body;
+      const game = api.new_game(creator, number_of_players);
+      res.send(game);
+      messageSubject.next({ type: "gameUpdate", payload: game });
+      broadcastGames(ws); // Broadcast updated games
+      broadcastPendingGames(ws); // Broadcast updated pending games
     }
   );
 
@@ -79,33 +87,30 @@ function start_server(ws: WebSocket) {
       req: TypedRequest<{ player: string }>,
       res: Response<PendingGame | IndexedGame>
     ) => {
-      const id = parseInt(req.params.id);
       try {
-        const g = api.join(id, req.body.player);
-        api.broadcast(g);
-        res.send(g);
+        const id = parseInt(req.params.id);
+        const game = api.join(id, req.body.player);
+        res.send(game);
+        messageSubject.next({ type: "gameUpdate", payload: game });
+        broadcastGames(ws); // Broadcast updated games
+        broadcastPendingGames(ws); // Broadcast updated pending games
       } catch (e: any) {
-        if (e.message === "Not Found") res.status(404).send();
-        res.status(403).send();
+        res.status(e.message === "Not Found" ? 404 : 403).send();
       }
     }
   );
 
-  gameserver.get(
-    "/games",
-    async (_: Request, res: Response<Readonly<IndexedGame[]>>) => {
-      const games = api.games();
-      res.send(games);
-    }
-  );
-
-  gameserver.get(
-    "/games/:id",
-    async (req: Request, res: Response<IndexedGame>) => {
-      const games = api.games();
-      const g = games.find((g) => g.id === parseInt(req.params.id));
-      if (!g) res.status(404).send();
-      else res.send(g);
+  gameserver.post(
+    "/games/:id/actions",
+    async (req: TypedRequest<Action>, res: Response) => {
+      try {
+        const id = parseInt(req.params.id);
+        const game = resolve_action(id, req.body);
+        res.send(game);
+        messageSubject.next({ type: "gameUpdate", payload: game });
+      } catch (e: any) {
+        res.status(e.message === "Not Found" ? 404 : 403).send();
+      }
     }
   );
 
@@ -117,23 +122,58 @@ function start_server(ws: WebSocket) {
         return api.register(id, action.slot, action.player);
     }
   }
+  function broadcastGames(ws: WebSocket) {
+    const games = all_games();
+    console.log("[Server] Broadcasting all games:", games);
+    ws.send(JSON.stringify({ type: "all_games", message: games }));
+  }
 
-  gameserver.post(
-    "/games/:id/actions",
-    async (req: TypedRequest<Action>, res: Response) => {
-      const id = parseInt(req.params.id);
-      try {
-        const game = resolve_action(id, req.body);
-        res.send(game);
-        api.broadcast(game);
-      } catch (e: any) {
-        if (e.message === "Not Found") res.status(404).send();
-        res.status(403).send();
+  function broadcastPendingGames(ws: WebSocket) {
+    const pendingGames = all_pending_games();
+    console.log("[Server] Broadcasting all pending games:", pendingGames);
+    ws.send(
+      JSON.stringify({ type: "all_pending_games", message: pendingGames })
+    );
+  }
+
+  ws.onopen = () => {
+    console.log("[Server] WebSocket connection to Pub/Sub established.");
+    broadcastGames(ws); // Broadcast ongoing games on connect
+    broadcastPendingGames(ws); // Broadcast pending games on connect
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const message = JSON.parse(event.data.toString());
+      console.log("[Gameserver] Received message from Pub/Sub:", message);
+
+      if (message.type === "gameUpdate") {
+        // Handle game update
+        console.log(
+          "[Gameserver] Processing gameUpdate message:",
+          message.message
+        );
+        // Add logic to update games or log actions if needed
+      } else {
+        console.error("[Gameserver] Unknown message type:", message.type);
       }
+    } catch (err) {
+      console.error("[Gameserver] Error processing message:", err);
     }
-  );
+  };
 
-  gameserver.listen(8080, () => console.log("Gameserver listening on 8080"));
+  messageSubject.subscribe({
+    next: (message) => {
+      console.log("[Server] Broadcasting message:", message);
+      if (message.type === "gameUpdate") {
+        console.log("[Server] Sending gameUpdate to Pub/Sub:", message.payload);
+        api.broadcast(message.payload);
+      }
+    },
+    error: (err) => {
+      console.error("[Server] Error in messageSubject subscription:", err);
+    },
+  });
 }
 
 const ws = new WebSocket("ws://localhost:9090/publish");

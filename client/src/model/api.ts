@@ -1,3 +1,7 @@
+// client/api
+
+import { Subject, Observable, from } from "rxjs";
+import { catchError, map } from "rxjs/operators";
 import type { DieValue } from "../../../models/src/model/dice";
 import type { IndexedYahtzee, IndexedYahtzeeSpecs } from "./game";
 import type { LowerSectionKey } from "../../../models/src/model/yahtzee.score";
@@ -7,59 +11,87 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-async function post(url: string, body: {} = {}): Promise<any> {
-  const response: Response = await fetch(url, {
+const apiSubject = new Subject<any>();
+
+// Utility function to create an Observable for fetch requests
+function apiCall<T>(url: string, options: RequestInit): Observable<T> {
+  return from(
+    fetch(url, options).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+  ).pipe(
+    catchError((error) => {
+      console.error(`API call failed at ${url}:`, error);
+      throw error;
+    })
+  );
+}
+
+// Utility function to create an Observable for POST requests
+function post<T>(url: string, body: {} = {}): Observable<T> {
+  return apiCall<T>(url, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
   });
-  return await response.json();
 }
 
-export async function games(): Promise<IndexedYahtzee[]> {
-  const response = await fetch("http://localhost:8080/games", { headers });
-  return await response.json();
+// API Functions
+export function games(): Observable<IndexedYahtzee[]> {
+  return apiCall<IndexedYahtzee[]>("http://localhost:8080/games", { headers });
 }
 
-export async function pending_games(): Promise<IndexedYahtzeeSpecs[]> {
-  const response = await fetch("http://localhost:8080/pending-games", {
+export function pendingGames(): Observable<IndexedYahtzeeSpecs[]> {
+  return apiCall<IndexedYahtzeeSpecs[]>("http://localhost:8080/pending-games", {
     headers,
   });
-  return await response.json();
 }
 
-export async function join(game: IndexedYahtzeeSpecs, player: string) {
+export function join(
+  game: IndexedYahtzeeSpecs,
+  player: string
+): Observable<IndexedYahtzeeSpecs | IndexedYahtzee> {
   return post(`http://localhost:8080/pending-games/${game.id}/players`, {
     player,
   });
 }
 
-export async function new_game(
+export function newGame(
   number_of_players: number,
   player: string
-): Promise<IndexedYahtzeeSpecs | IndexedYahtzee> {
-  return await post("http://localhost:8080/pending-games", {
+): Observable<IndexedYahtzeeSpecs | IndexedYahtzee> {
+  return post("http://localhost:8080/pending-games", {
     creator: player,
     number_of_players,
   });
 }
 
-async function perform_action(game: IndexedYahtzee, action: any) {
-  return post(`http://localhost:8080/games/${game.id}/actions`, action);
+function performAction<T>(game: IndexedYahtzee, action: any): Observable<T> {
+  return post<T>(`http://localhost:8080/games/${game.id}/actions`, action);
 }
 
-export async function reroll(
+export function reroll(
   game: IndexedYahtzee,
   held: number[],
   player: string
-) {
-  return perform_action(game, { type: "reroll", held, player });
+): Observable<IndexedYahtzee> {
+  return performAction<IndexedYahtzee>(game, { type: "reroll", held, player });
 }
 
-export async function register(
+export function register(
   game: IndexedYahtzee,
   slot: DieValue | LowerSectionKey,
   player: string
-) {
-  return perform_action(game, { type: "register", slot, player });
+): Observable<IndexedYahtzee> {
+  return performAction<IndexedYahtzee>(game, {
+    type: "register",
+    slot,
+    player,
+  });
 }
+
+// Export the subject to allow other parts of the application to listen to updates
+export const apiUpdates$ = apiSubject.asObservable();

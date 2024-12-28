@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { register } from "../model/api";
 import {
   lower_section_keys,
   lower_section_slots,
@@ -7,18 +6,40 @@ import {
   total_upper,
   upper_section_slots,
 } from "../../../models/src/model/yahtzee.score";
-import { die_values } from "../../../models/src/model/dice";
 import { score } from "../../../models/src/model/yahtzee.slots";
+import { die_values } from "../../../models/src/model/dice";
+import { register } from "../model/api";
+import { useDispatch } from "react-redux";
+import { upsert } from "../slices/ongoing_games_slice";
 
 const ScoreCard = ({ game, player, enabled }) => {
   const { players, upper_sections, lower_sections } = game;
+  const dispatch = useDispatch(); // Initialize dispatch
 
-  const [hoveredCell, setHoveredCell] = useState(null); // Tracks the hovered cell
+  const [hoveredCell, setHoveredCell] = useState(null);
 
   const handleRegister = (key, isUpper) => {
-    if (enabled) {
-      register(game, key, player);
+    if (!enabled) {
+      console.warn("Registration is disabled.");
+      return;
     }
+
+    console.log("Attempting to register slot:", key, "for game ID:", game.id);
+
+    register(game, key, player).subscribe({
+      next: (updatedGame) => {
+        console.log(
+          "Registration successful. Updated game state:",
+          updatedGame
+        );
+
+        // Update the Redux state for the ongoing game.
+        dispatch(upsert(updatedGame));
+      },
+      error: (error) => {
+        console.error("Registration failed:", error);
+      },
+    });
   };
 
   const isActive = (p) =>
@@ -30,10 +51,8 @@ const ScoreCard = ({ game, player, enabled }) => {
       : score(lower_section_slots[key], game.roll);
   };
 
-  const displayScore = (score) => {
-    if (score === undefined || score === null) return "---";
-    return score;
-  };
+  const displayScore = (score) =>
+    score === undefined || score === null ? "---" : score;
 
   const activeClass = (p) => (p === player ? "activeplayer" : undefined);
 
@@ -162,12 +181,10 @@ const ScoreCard = ({ game, player, enabled }) => {
             {players.map((p, i) => (
               <td key={p} className={activeClass(p)}>
                 {lower_sections?.[i]?.scores
-                  ? Object.values(
-                      lower_sections[i]?.scores as Record<
-                        string,
-                        number | null | undefined
-                      >
-                    ).reduce<number>((acc, score) => acc + (score ?? 0), 0)
+                  ? Object.values(lower_sections[i]?.scores).reduce(
+                      (acc, score) => acc + (score ?? 0),
+                      0
+                    )
                   : "---"}
               </td>
             ))}

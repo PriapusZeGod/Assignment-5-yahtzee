@@ -25,11 +25,15 @@ const pendingGamesSlice = createSlice({
     },
     upsert(state, action) {
       const game = action.payload;
-      if (state.gameList.some((g) => g.id === game.id)) {
-        const index = state.gameList.findIndex((g) => g.id === game.id);
+      console.log("[Pending Games Slice] Upserting game:", game);
+
+      const index = state.gameList.findIndex((g) => g.id === game.id);
+      if (index > -1) {
         state.gameList[index] = game;
+        console.log("[Pending Games Slice] Updated game at index", index, game);
       } else {
         state.gameList.push(game);
+        console.log("[Pending Games Slice] Added new game:", game);
       }
     },
     remove(state, action) {

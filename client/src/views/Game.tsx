@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import fetchGames from "../slices/ongoing_games_slice";
+import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 import DiceRoll from "../components/DiceRoll";
 import ScoreCard from "../components/ScoreCard";
 import "../style.css";
@@ -25,10 +25,9 @@ const Game = () => {
       return;
     }
 
-    const foundGame = games.find((game) => game.id === parseInt(id, 10));
-    if (!foundGame) {
-      dispatch(fetchGames());
-    } else {
+    // Find the game in the Redux store
+    const foundGame = games.find((g) => g.id === parseInt(id, 10));
+    if (foundGame) {
       setGame(foundGame);
       setEnabled(player === foundGame.players[foundGame.playerInTurn]);
       setFinished(foundGame.isFinished);
@@ -38,8 +37,10 @@ const Game = () => {
         .map((score, index) => [foundGame.players[index], score])
         .sort((a, b) => b[1] - a[1]);
       setStandings(sortedStandings);
+    } else {
+      console.error(`Game with ID ${id} not found in the Redux store.`);
     }
-  }, [games, player, id, navigate, dispatch]);
+  }, [games, player, id, navigate]);
 
   return (
     <div className="game-layout">

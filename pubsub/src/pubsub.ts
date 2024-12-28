@@ -1,48 +1,79 @@
-import { WebSocketServer, WebSocket } from 'ws'
+import { WebSocketServer, WebSocket } from "ws";
+import { Subject } from "rxjs";
+import { all_games } from "../../server/src/servermodel";
 
-const webSocketServer = new WebSocketServer({ port: 9090, path: '/publish' })
+const PORT = 9090;
+const webSocketServer = new WebSocketServer({ port: PORT, path: "/publish" });
 
-const clients = new Set<WebSocket>()
+console.log(`Pub/Sub server listening on port ${PORT}`);
 
-const send = (message: unknown) => {
-  for (let ws of clients)
-      if (ws.readyState === WebSocket.OPEN) 
-          ws.send(JSON.stringify(message))
-}
+// Clients set
+const clients = new Set<WebSocket>();
 
-const close = (ws: WebSocket) => {
-  if (ws.readyState === WebSocket.OPEN) 
-    ws.close()
-  clients.delete(ws)
-}
+// RxJS Subject to manage incoming messages
+const messageSubject = new Subject<{ type: string; message?: any }>();
 
-type Command = { type: string } & Record<string, unknown>
+// Rate-limiting for logs
+let lastBroadcastLogTime = 0;
+const LOG_RATE_LIMIT_MS = 5000; // Log at most every 5 seconds
 
-webSocketServer.on('connection', (ws, req) => {
-  ws.on('message', message => {
-    try {
-      const command: Command = JSON.parse(message.toString())
-      switch (command.type) {
-        case 'subscribe':
-          clients.add(ws)
-          break
-        case 'unsubscribe':
-          clients.delete(ws)
-          break
-        case 'send':
-          send(command.message)
-          break
-        case 'close':
-          close(ws)
-          break
-        default:
-          console.error(`Incorrect message: '${message}' from ${req.socket.remoteAddress} (${req.socket.remoteFamily})`)
-      }
-    } catch (e) {
-        console.error(e)
+// Function to broadcast messages to all connected clients
+const broadcast = (message: any) => {
+  const now = Date.now();
+  if (now - lastBroadcastLogTime > LOG_RATE_LIMIT_MS) {
+    console.log("[PubSub] Broadcasting message to clients:", message);
+    lastBroadcastLogTime = now;
+  }
+  for (const ws of clients) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
     }
-  })
-  ws.on('close', () => close(ws))
-})
+  }
+};
 
-console.log('Pub/Sub server listening on 9090')
+// Handle incoming WebSocket connections
+webSocketServer.on("connection", (ws) => {
+  clients.add(ws);
+  console.log("New client connected.");
+
+  // Handle incoming messages
+  ws.on("message", (data) => {
+    try {
+      const command = JSON.parse(data.toString());
+      if (command.type === "subscribe") {
+        console.log("[PubSub] Client subscribed, sending all_games update.");
+        ws.send(
+          JSON.stringify({
+            type: "all_games",
+            message: all_games(),
+          })
+        );
+      } else {
+        messageSubject.next(command);
+      }
+    } catch (error) {
+      console.error("[PubSub] Error parsing WebSocket message:", error);
+    }
+  });
+
+  // Handle connection close
+  ws.on("close", () => {
+    clients.delete(ws);
+    console.log("Client disconnected.");
+  });
+
+  // Handle errors
+  ws.on("error", (err) => {
+    console.error("WebSocket error:", err);
+  });
+});
+
+// Subscribe to the Subject to handle message broadcasting and commands
+messageSubject.subscribe({
+  next: (command) => {
+    if (command.type === "gameUpdate") {
+      broadcast(command.message);
+    }
+  },
+  error: (err) => console.error("Error in messageSubject subscription:", err),
+});
