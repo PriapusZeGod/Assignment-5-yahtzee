@@ -49,9 +49,9 @@ function start_server(ws: WebSocket) {
 
   gameserver.use(bodyParser.json());
 
-  ws.onopen = () => console.log("WebSocket connection to Pub/Sub established."); // New log
-  ws.onerror = (error) => console.error("WebSocket error to Pub/Sub:", error); // New log
-  ws.onclose = () => console.log("WebSocket connection to Pub/Sub closed."); // New log
+  ws.onopen = () => console.log("WebSocket connection to Pub/Sub established.");
+  ws.onerror = (error) => console.error("WebSocket error to Pub/Sub:", error);
+  ws.onclose = () => console.log("WebSocket connection to Pub/Sub closed.");
 
   gameserver.post(
     "/pending-games",
@@ -76,8 +76,8 @@ function start_server(ws: WebSocket) {
       const game = api.new_game(creator, number_of_players);
       res.send(game);
       messageSubject.next({ type: "gameUpdate", payload: game });
-      broadcastGames(ws); // Broadcast updated games
-      broadcastPendingGames(ws); // Broadcast updated pending games
+      broadcastGames(ws);
+      broadcastPendingGames(ws);
     }
   );
 
@@ -92,8 +92,8 @@ function start_server(ws: WebSocket) {
         const game = api.join(id, req.body.player);
         res.send(game);
         messageSubject.next({ type: "gameUpdate", payload: game });
-        broadcastGames(ws); // Broadcast updated games
-        broadcastPendingGames(ws); // Broadcast updated pending games
+        broadcastGames(ws);
+        broadcastPendingGames(ws);
       } catch (e: any) {
         res.status(e.message === "Not Found" ? 404 : 403).send();
       }
@@ -138,8 +138,8 @@ function start_server(ws: WebSocket) {
 
   ws.onopen = () => {
     console.log("[Server] WebSocket connection to Pub/Sub established.");
-    broadcastGames(ws); // Broadcast ongoing games on connect
-    broadcastPendingGames(ws); // Broadcast pending games on connect
+    broadcastGames(ws);
+    broadcastPendingGames(ws);
   };
 
   ws.onmessage = (event) => {
@@ -148,12 +148,10 @@ function start_server(ws: WebSocket) {
       console.log("[Gameserver] Received message from Pub/Sub:", message);
 
       if (message.type === "gameUpdate") {
-        // Handle game update
         console.log(
           "[Gameserver] Processing gameUpdate message:",
           message.message
         );
-        // Add logic to update games or log actions if needed
       } else {
         console.error("[Gameserver] Unknown message type:", message.type);
       }

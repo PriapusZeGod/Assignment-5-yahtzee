@@ -12,8 +12,8 @@ export default (ws: WebSocket) => {
   const messageSubject = new Subject<{ type: string; payload?: any }>();
 
   ws.onopen = () => {
-    console.log("WebSocket connection established. Sending test message."); // Add this line
-    ws.send(JSON.stringify({ type: "send", message: "Test broadcast" })); // Test message
+    console.log("WebSocket connection established. Sending test message.");
+    ws.send(JSON.stringify({ type: "send", message: "Test broadcast" }));
   };
 
   // WebSocket message listener
@@ -67,7 +67,7 @@ export default (ws: WebSocket) => {
 
     console.log(`[reroll] Reroll complete. New roll: ${updatedGame.roll}`);
 
-    broadcast(updatedGame); // Ensure this propagates to the WebSocket.
+    broadcast(updatedGame);
 
     return updatedGame;
   }
@@ -98,7 +98,7 @@ export default (ws: WebSocket) => {
       `[register] Registration complete. Player in turn now: ${updatedGame.playerInTurn}`
     );
 
-    broadcast(updatedGame); // Ensure this propagates to the WebSocket.
+    broadcast(updatedGame);
 
     return updatedGame;
   }
@@ -121,7 +121,7 @@ export default (ws: WebSocket) => {
     ws.send(JSON.stringify({ type: "all_games", message: allGames }));
   }
 
-  // Subscribe to handle specific messages
+  // Subscribe to handle game updates
   messageSubject.subscribe({
     next: (message) => {
       switch (message.type) {

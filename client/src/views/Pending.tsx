@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-import { join } from "../model/api"; // Using the existing `join` function
+import { join } from "../model/api";
 import { remove as removePendingGame } from "../slices/pending_games_slice";
 import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 
@@ -41,8 +41,8 @@ const Pending = () => {
     if (canJoin && pendingGame) {
       try {
         const updatedGame = await join(pendingGame, player);
-        dispatch(removePendingGame({ id: pendingGame.id })); // Remove from pending
-        dispatch(upsertOngoingGame(updatedGame)); // Add to ongoing
+        dispatch(removePendingGame({ id: pendingGame.id })); // Removing from pending
+        dispatch(upsertOngoingGame(updatedGame)); // Adding to ongoing
         navigate(`/game/${updatedGame.id}`);
       } catch (err) {
         console.error("Error joining the game:", err);

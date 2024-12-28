@@ -14,7 +14,7 @@ import { upsert } from "../slices/ongoing_games_slice";
 
 const ScoreCard = ({ game, player, enabled }) => {
   const { players, upper_sections, lower_sections } = game;
-  const dispatch = useDispatch(); // Initialize dispatch
+  const dispatch = useDispatch();
 
   const [hoveredCell, setHoveredCell] = useState(null);
 
@@ -32,8 +32,6 @@ const ScoreCard = ({ game, player, enabled }) => {
           "Registration successful. Updated game state:",
           updatedGame
         );
-
-        // Update the Redux state for the ongoing game.
         dispatch(upsert(updatedGame));
       },
       error: (error) => {

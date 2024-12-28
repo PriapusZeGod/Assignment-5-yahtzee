@@ -19,7 +19,7 @@ const store = configureStore({
     player: playerReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(loggerMiddleware), // Add custom middleware
+    getDefaultMiddleware().concat(loggerMiddleware),
 });
 
 export default store;

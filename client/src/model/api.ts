@@ -1,5 +1,3 @@
-// client/api
-
 import { Subject, Observable, from } from "rxjs";
 import { catchError, map } from "rxjs/operators";
 import type { DieValue } from "../../../models/src/model/dice";
@@ -93,5 +91,5 @@ export function register(
   });
 }
 
-// Export the subject to allow other parts of the application to listen to updates
+// Observable for API updates
 export const apiUpdates$ = apiSubject.asObservable();
