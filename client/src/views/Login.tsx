@@ -3,16 +3,21 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setPlayer } from "../slices/player_slice";
 
+// Login component
 const Login = () => {
+  // Local state for the username input
   const [username, setUsername] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Handler for the login button click
   const handleLogin = () => {
     if (username.trim()) {
+      // If the username is not empty, dispatch the setPlayer action and navigate to the home page
       dispatch(setPlayer(username));
       navigate("/");
     } else {
+      // If the username is empty, log a message to the console
       console.log("Username cannot be empty.");
     }
   };

@@ -1,20 +1,24 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Initial state for the ongoing games slice
 const initialState = {
-  gameList: [],
+  gameList: [], // List of ongoing games
 };
 
+// Create a slice for ongoing games
 const ongoingGamesSlice = createSlice({
-  name: "ongoingGames",
-  initialState,
+  name: "ongoingGames", // Name of the slice
+  initialState, // Initial state
   reducers: {
+    // Reducer to upsert (update or insert) a game
     upsert(state, action) {
-      const game = action.payload;
+      const game = action.payload; // The game to upsert
       console.log(
         `[Ongoing Games Slice] Upserting game for player ${state.player}:`,
         game
       );
 
+      // Find the index of the game in the gameList
       const index = state.gameList.findIndex((g) => g.id === game.id);
       if (index > -1) {
         // Update existing game
@@ -30,11 +34,13 @@ const ongoingGamesSlice = createSlice({
   },
 });
 
+// Export the upsert action
 export const { upsert } = ongoingGamesSlice.actions;
 
-// Selectors
+// Selectors to get data from the state
 export const selectGames = (state) => state.ongoingGames.gameList;
 export const selectGameById = (state, id) =>
   state.ongoingGames.gameList.find((g) => g.id === id);
 
+// Export the reducer to be used in the store
 export default ongoingGamesSlice.reducer;

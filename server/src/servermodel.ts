@@ -6,13 +6,16 @@ import {
 } from "models/src/model/yahtzee.game";
 import { standardRandomizer } from "models/src/utils/random_utils";
 
+// Define the type for an indexed game
 export type IndexedGame = Yahtzee & {
   readonly id: number;
   readonly pending: false;
 };
 
+// Global ID for games
 let global_id = 1;
 
+// Example game for initial state
 const game0: IndexedGame = {
   id: 0,
   players: ["Alice", "Bob"],
@@ -73,29 +76,36 @@ const game0: IndexedGame = {
   roller: dice_roller(standardRandomizer),
 };
 
+// List of all games
 export const games: IndexedGame[] = [game0];
 
+// Define the type for a pending game
 export type PendingGame = YahtzeeSpecs & {
   id: number;
   readonly pending: true;
 };
 
+// List of all pending games
 export const pending_games: PendingGame[] = [];
 
+// Function to get all games
 export function all_games(): Readonly<IndexedGame[]> {
   console.log("[Server] Returning all games:", games);
   return games;
 }
 
+// Function to get all pending games
 export function all_pending_games(): Readonly<PendingGame[]> {
   console.log("[Server] Returning all pending games:", pending_games);
   return pending_games;
 }
 
+// Function to get a game by ID
 export function game(id: number): IndexedGame | undefined {
   return games.find((g) => g.id === id);
 }
 
+// Function to add a new game
 export function add(
   creator: string,
   number_of_players: number
@@ -112,6 +122,7 @@ export function add(
   return join(id, creator);
 }
 
+// Function to join a pending game
 export function join(id: number, player: string): PendingGame | IndexedGame {
   const index = pending_games.findIndex((g) => g.id === id);
   if (index === -1) throw new Error("Not found");
@@ -131,6 +142,7 @@ export function join(id: number, player: string): PendingGame | IndexedGame {
   }
 }
 
+// Function to update a game
 export function update(
   id: number,
   reroll: (g: Yahtzee) => Yahtzee

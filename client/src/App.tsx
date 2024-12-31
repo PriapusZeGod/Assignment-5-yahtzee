@@ -2,11 +2,14 @@ import React, { useEffect } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 
+// App component
 const App = () => {
+  // Get the current player, ongoing games, and pending games from the Redux store
   const player = useSelector((state) => state.player.player);
   const ongoingGames = useSelector((state) => state.ongoingGames.gameList);
   const pendingGames = useSelector((state) => state.pendingGames.gameList);
 
+  // Effect to log the Redux state when the component mounts or updates
   useEffect(() => {
     console.log("[App] Redux state on mount:", {
       player,

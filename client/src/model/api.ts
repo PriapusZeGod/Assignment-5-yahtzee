@@ -4,11 +4,13 @@ import type { DieValue } from "../../../models/src/model/dice";
 import type { IndexedYahtzee, IndexedYahtzeeSpecs } from "./game";
 import type { LowerSectionKey } from "../../../models/src/model/yahtzee.score";
 
+// Headers for API requests
 const headers = {
   Accept: "application/json",
   "Content-Type": "application/json",
 };
 
+// Subject to emit API updates
 const apiSubject = new Subject<any>();
 
 // Utility function to create an Observable for fetch requests
@@ -38,16 +40,20 @@ function post<T>(url: string, body: {} = {}): Observable<T> {
 }
 
 // API Functions
+
+// Fetch all games
 export function games(): Observable<IndexedYahtzee[]> {
   return apiCall<IndexedYahtzee[]>("http://localhost:8080/games", { headers });
 }
 
+// Fetch all pending games
 export function pendingGames(): Observable<IndexedYahtzeeSpecs[]> {
   return apiCall<IndexedYahtzeeSpecs[]>("http://localhost:8080/pending-games", {
     headers,
   });
 }
 
+// Join a pending game
 export function join(
   game: IndexedYahtzeeSpecs,
   player: string
@@ -57,6 +63,7 @@ export function join(
   });
 }
 
+// Create a new game
 export function newGame(
   number_of_players: number,
   player: string
@@ -67,10 +74,12 @@ export function newGame(
   });
 }
 
+// Perform an action on a game
 function performAction<T>(game: IndexedYahtzee, action: any): Observable<T> {
   return post<T>(`http://localhost:8080/games/${game.id}/actions`, action);
 }
 
+// Reroll dice in a game
 export function reroll(
   game: IndexedYahtzee,
   held: number[],
@@ -79,6 +88,7 @@ export function reroll(
   return performAction<IndexedYahtzee>(game, { type: "reroll", held, player });
 }
 
+// Register a score in a game
 export function register(
   game: IndexedYahtzee,
   slot: DieValue | LowerSectionKey,

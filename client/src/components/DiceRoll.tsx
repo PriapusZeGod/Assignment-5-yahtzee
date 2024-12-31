@@ -3,16 +3,27 @@ import { useDispatch } from "react-redux";
 import { reroll } from "../model/api";
 import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 
-const DiceRoll = ({ game, player, enabled }) => {
+// Define the props for the DiceRoll component
+interface DiceRollProps {
+  game: any;
+  player: any;
+  enabled: boolean;
+}
+
+// DiceRoll component
+const DiceRoll: React.FC<DiceRollProps> = ({ game, player, enabled }) => {
+  // State to keep track of which dice are held
   const [held, setHeld] = useState([false, false, false, false, false]);
   const dispatch = useDispatch();
 
+  // Memoized value to determine if reroll is enabled
   const rerollEnabled = useMemo(() => {
     const isPlayerTurn = game?.players[game?.playerInTurn] === player;
     console.log("Reroll enabled check:", game?.rolls_left > 0, isPlayerTurn);
     return game && game.rolls_left > 0 && isPlayerTurn;
   }, [game?.rolls_left, game?.playerInTurn, player]);
 
+  // Effect to reset held state when a new roll occurs
   useEffect(() => {
     if (game?.roll?.length === 5 && held.length !== 5) {
       setHeld([false, false, false, false, false]);
@@ -23,9 +34,11 @@ const DiceRoll = ({ game, player, enabled }) => {
     console.log("Is rerollEnabled:", game && game.rolls_left > 0 && enabled);
   }, [game, held.length]);
 
+  // Handler for reroll button click
   const handleReroll = () => {
     console.log("Reroll button clicked");
     if (enabled && game && player) {
+      // Get indices of held dice
       const heldIndices = held
         .map((isHeld, index) => (isHeld ? index : null))
         .filter((index) => index !== null);
@@ -36,6 +49,7 @@ const DiceRoll = ({ game, player, enabled }) => {
         player,
       });
 
+      // Call reroll API and handle response
       reroll(game, heldIndices, player).subscribe({
         next: (updatedGame) => {
           console.log("Reroll response:", updatedGame);
@@ -52,8 +66,15 @@ const DiceRoll = ({ game, player, enabled }) => {
     }
   };
 
+  // Props for rendering a single dice image
+  interface RenderDiceImageProps {
+    value: number;
+    index: number;
+  }
+
+  // Function to render a single dice image
   const renderDiceImage = useCallback(
-    (value, index) => (
+    ({ value, index }: RenderDiceImageProps) => (
       <div key={index} className="dice-container">
         <img
           src={`/assets/${value}.png`}
@@ -74,8 +95,9 @@ const DiceRoll = ({ game, player, enabled }) => {
     [held, enabled]
   );
 
+  // Memoized list of dice images
   const diceList = useMemo(
-    () => game.roll.map((value, index) => renderDiceImage(value, index)),
+    () => game.roll.map((value: number, index: number) => renderDiceImage({ value, index })),
     [game?.roll, renderDiceImage]
   );
 

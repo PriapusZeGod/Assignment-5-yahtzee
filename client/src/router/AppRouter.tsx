@@ -14,16 +14,20 @@ import Pending from "../views/Pending";
 
 // PrivateRoute component to protect authenticated routes
 const PrivateRoute = ({ children }) => {
+  // Get the current player from the Redux store
   const player = useSelector((state) => state.player.player);
   console.log("[AppRouter] Current player state:", player);
 
+  // If no player is logged in, navigate to the login page
   if (!player) {
     return <Navigate to="/login" replace />;
   }
 
+  // If a player is logged in, render the children components
   return children;
 };
 
+// AppRouter component to define the application's routing
 const AppRouter = () => {
   return (
     <Router>

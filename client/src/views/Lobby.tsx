@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { upsert as upsertPendingGame } from "../slices/pending_games_slice";
 import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 
+// Lobby component
 const Lobby = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -11,8 +12,10 @@ const Lobby = () => {
   const pendingGames = useSelector((state) => state.pendingGames.gameList);
   const ongoingGames = useSelector((state) => state.ongoingGames.gameList);
 
+  // Effect to handle WebSocket connection and state updates
   useEffect(() => {
     if (!player) {
+      // If no player is logged in, navigate to the login page
       navigate("/login");
       return;
     }
@@ -24,55 +27,71 @@ const Lobby = () => {
     });
 
     let ws = new WebSocket("ws://localhost:9090/publish");
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 5000; // 5 seconds
 
-    ws.onopen = () => {
-      console.log("[Lobby] WebSocket connection opened.");
-      ws.send(JSON.stringify({ type: "subscribe" }));
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        console.log("[Lobby] Received WebSocket message:", message);
-
-        switch (message.type) {
-          case "all_pending_games":
-            message.message.forEach((game) => {
-              dispatch(upsertPendingGame(game));
-              console.log("[Lobby] Updated pending games:", pendingGames);
-            });
-            break;
-
-          case "all_games":
-            message.message.forEach((game) => {
-              dispatch(upsertOngoingGame(game));
-              console.log("[Lobby] Updated ongoing games:", ongoingGames);
-            });
-            break;
-
-          case "gameUpdate":
-            dispatch(upsertOngoingGame(message.message));
-            console.log("[Lobby] Updated game from gameUpdate:", ongoingGames);
-            break;
-
-          default:
-            console.warn("[Lobby] Unknown WebSocket message type:", message);
-        }
-      } catch (error) {
-        console.error("[Lobby] Error processing WebSocket message:", error);
+    const connectWebSocket = () => {
+      if (retryCount >= maxRetries) {
+        console.error("[Lobby] Maximum retry attempts reached. Giving up.");
+        return;
       }
+
+      ws = new WebSocket("ws://localhost:9090/publish");
+
+      ws.onopen = () => {
+        console.log("[Lobby] WebSocket connection opened.");
+        ws.send(JSON.stringify({ type: "subscribe" }));
+        retryCount = 0; // Reset retry count on successful connection
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          console.log("[Lobby] Received WebSocket message:", message);
+
+          switch (message.type) {
+            case "all_pending_games":
+              message.message.forEach((game) => {
+                dispatch(upsertPendingGame(game));
+                console.log("[Lobby] Updated pending games:", pendingGames);
+              });
+              break;
+
+            case "all_games":
+              message.message.forEach((game) => {
+                dispatch(upsertOngoingGame(game));
+                console.log("[Lobby] Updated ongoing games:", ongoingGames);
+              });
+              break;
+
+            case "gameUpdate":
+              dispatch(upsertOngoingGame(message.message));
+              console.log("[Lobby] Updated game from gameUpdate:", ongoingGames);
+              break;
+
+            default:
+              console.warn("[Lobby] Unknown WebSocket message type:", message);
+          }
+        } catch (error) {
+          console.error("[Lobby] Error processing WebSocket message:", error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("[Lobby] WebSocket error:", error);
+        retryCount++;
+        setTimeout(connectWebSocket, retryDelay); // Retry connection after delay
+      };
+
+      ws.onclose = () => {
+        console.log("[Lobby] WebSocket connection closed. Retrying...");
+        retryCount++;
+        setTimeout(connectWebSocket, retryDelay); // Retry connection after delay
+      };
     };
 
-    ws.onerror = (error) => {
-      console.error("[Lobby] WebSocket error:", error);
-      setTimeout(() => {
-        ws = new WebSocket("ws://localhost:9090/publish");
-      }, 5000);
-    };
-
-    ws.onclose = () => {
-      console.log("[Lobby] WebSocket connection closed. Retrying...");
-    };
+    connectWebSocket();
 
     return () => {
       console.log("[Lobby] Cleaning up WebSocket connection.");

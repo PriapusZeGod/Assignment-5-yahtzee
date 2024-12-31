@@ -1,4 +1,4 @@
-// server/api
+// Importing necessary modules and types
 import { WebSocket } from "ws";
 import * as Game from "models/src/model/yahtzee.game";
 import { IndexedGame, PendingGame } from "./servermodel";
@@ -7,10 +7,12 @@ import { DieValue } from "models/src/model/dice";
 import { LowerSectionKey } from "models/src/model/yahtzee.score";
 import { Subject } from "rxjs";
 
+// Exporting the default function that sets up the WebSocket API
 export default (ws: WebSocket) => {
   // RxJS Subject to handle incoming messages
   const messageSubject = new Subject<{ type: string; payload?: any }>();
 
+  // WebSocket connection open event
   ws.onopen = () => {
     console.log("WebSocket connection established. Sending test message.");
     ws.send(JSON.stringify({ type: "send", message: "Test broadcast" }));
@@ -40,6 +42,7 @@ export default (ws: WebSocket) => {
     }
   }
 
+  // Function to create a new game
   function new_game(
     creator: string,
     number_of_players: number
@@ -47,6 +50,7 @@ export default (ws: WebSocket) => {
     return G.add(creator, number_of_players);
   }
 
+  // Function to handle rerolling dice in a game
   function reroll(id: number, held: number[], player: string) {
     const game = G.game(id);
 
@@ -72,6 +76,7 @@ export default (ws: WebSocket) => {
     return updatedGame;
   }
 
+  // Function to handle registering a score in a game
   function register(
     id: number,
     slot: DieValue | LowerSectionKey,
@@ -103,18 +108,22 @@ export default (ws: WebSocket) => {
     return updatedGame;
   }
 
+  // Function to get all games
   function games(): Readonly<IndexedGame[]> {
     return G.all_games();
   }
 
+  // Function to get all pending games
   function pending_games(): Readonly<PendingGame[]> {
     return G.all_pending_games();
   }
 
+  // Function to join a pending game
   function join(id: number, player: string): IndexedGame | PendingGame {
     return G.join(id, player);
   }
 
+  // Function to broadcast all game updates
   function broadcastGameUpdates() {
     const allGames = G.all_games();
     console.log("[Server] Broadcasting all games to WebSocket:", allGames);
