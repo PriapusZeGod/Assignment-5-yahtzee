@@ -12,12 +12,15 @@ import { register } from "../model/api";
 import { useDispatch } from "react-redux";
 import { upsert } from "../slices/ongoing_games_slice";
 
+// ScoreCard component
 const ScoreCard = ({ game, player, enabled }) => {
   const { players, upper_sections, lower_sections } = game;
   const dispatch = useDispatch();
 
+  // State to keep track of the currently hovered cell
   const [hoveredCell, setHoveredCell] = useState(null);
 
+  // Handler for registering a score
   const handleRegister = (key, isUpper) => {
     if (!enabled) {
       console.warn("Registration is disabled.");
@@ -40,18 +43,22 @@ const ScoreCard = ({ game, player, enabled }) => {
     });
   };
 
+  // Check if the current player is active
   const isActive = (p) =>
     game.players[game.playerInTurn] === player && player === p;
 
+  // Get the potential score for a given slot
   const getPotentialScore = (key, isUpper) => {
     return isUpper
       ? score(upper_section_slots[key], game.roll)
       : score(lower_section_slots[key], game.roll);
   };
 
+  // Display the score or a placeholder if the score is undefined
   const displayScore = (score) =>
     score === undefined || score === null ? "---" : score;
 
+  // Get the CSS class for the active player
   const activeClass = (p) => (p === player ? "activeplayer" : undefined);
 
   return (

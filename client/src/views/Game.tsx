@@ -6,21 +6,27 @@ import DiceRoll from "../components/DiceRoll";
 import ScoreCard from "../components/ScoreCard";
 import "../style.css";
 
+// Game component
 const Game = () => {
+  // Get the game ID from the URL parameters
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Get the list of ongoing games and the current player from the Redux store
   const games = useSelector((state) => state.ongoingGames.gameList);
   const player = useSelector((state) => state.player.player);
 
+  // Local state for the game, enabled status, finished status, and standings
   const [game, setGame] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [finished, setFinished] = useState(false);
   const [standings, setStandings] = useState([]);
 
+  // Effect to load the game and set the state when the component mounts or updates
   useEffect(() => {
     if (!player) {
+      // If no player is logged in, navigate to the login page
       navigate(`/login?game=${id}`);
       return;
     }
@@ -32,6 +38,7 @@ const Game = () => {
       setEnabled(player === foundGame.players[foundGame.playerInTurn]);
       setFinished(foundGame.isFinished);
 
+      // Calculate the standings based on the scores
       const scores = foundGame.scores || [];
       const sortedStandings = scores
         .map((score, index) => [foundGame.players[index], score])

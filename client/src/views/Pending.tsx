@@ -5,11 +5,13 @@ import { join } from "../model/api";
 import { remove as removePendingGame } from "../slices/pending_games_slice";
 import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 
+// Pending component
 const Pending = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Select the pending game, ongoing game, and player from the Redux store
   const pendingGame = useSelector((state) =>
     state.pendingGames.gameList.find((g) => g.id === parseInt(id, 10))
   );
@@ -18,17 +20,21 @@ const Pending = () => {
   );
   const player = useSelector((state) => state.player.player);
 
+  // Determine if the player can join the pending game
   const canJoin = useMemo(() => {
     return pendingGame && player && !pendingGame.players.includes(player);
   }, [pendingGame, player]);
 
+  // Effect to handle navigation and game state when the component mounts or updates
   useEffect(() => {
     if (!player) {
+      // If no player is logged in, navigate to the login page
       navigate(`/login?pending=${id}`);
       return;
     }
 
     if (!pendingGame) {
+      // If the pending game is not found, check if it is an ongoing game or navigate to the home page
       if (ongoingGame) {
         navigate(`/game/${id}`);
       } else {
@@ -37,6 +43,7 @@ const Pending = () => {
     }
   }, [player, pendingGame, ongoingGame, navigate, id]);
 
+  // Handler for the join button click
   const handleJoin = async () => {
     if (canJoin && pendingGame) {
       try {

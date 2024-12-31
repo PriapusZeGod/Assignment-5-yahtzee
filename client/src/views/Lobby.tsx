@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { upsert as upsertPendingGame } from "../slices/pending_games_slice";
 import { upsert as upsertOngoingGame } from "../slices/ongoing_games_slice";
 
+// Lobby component
 const Lobby = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -11,8 +12,10 @@ const Lobby = () => {
   const pendingGames = useSelector((state) => state.pendingGames.gameList);
   const ongoingGames = useSelector((state) => state.ongoingGames.gameList);
 
+  // Effect to handle WebSocket connection and state updates
   useEffect(() => {
     if (!player) {
+      // If no player is logged in, navigate to the login page
       navigate("/login");
       return;
     }
