@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { Subject } from "rxjs";
+import { merge, Subject } from "rxjs";
 import { all_games } from "../../server/src/servermodel";
 
 const PORT = 9090;
@@ -9,6 +9,20 @@ console.log(`Pub/Sub server listening on port ${PORT}`);
 
 // Clients set
 const clients = new Set<WebSocket>();
+
+// Define two Subjects (Observables) for different types of game updates
+const gameStarted = new Subject<string>();
+const gameEnded = new Subject<string>();
+
+// Create an Observable of Observables by merging them
+const gameEvents$ = merge(gameStarted.asObservable(), gameEnded.asObservable());
+
+// Subscribe to the merged Observable
+gameEvents$.subscribe((event) => console.log(`Game Event: ${event}`));
+
+// Emit events
+gameStarted.next("Game #1 started");
+gameEnded.next("Game #1 ended");
 
 // RxJS Subject to manage incoming messages
 const messageSubject = new Subject<{ type: string; message?: any }>();

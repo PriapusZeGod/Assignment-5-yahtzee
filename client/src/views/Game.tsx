@@ -14,8 +14,8 @@ const Game = () => {
   const dispatch = useDispatch();
 
   // Get the list of ongoing games and the current player from the Redux store
-  const games = useSelector((state) => state.ongoingGames.gameList);
-  const player = useSelector((state) => state.player.player);
+  const games = useSelector((state: any) => state.ongoingGames.gameList);
+  const player = useSelector((state: any) => state.player.player);
 
   // Local state for the game, enabled status, finished status, and standings
   const [game, setGame] = useState(null);

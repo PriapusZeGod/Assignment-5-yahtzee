@@ -3,6 +3,7 @@ import { catchError, map } from "rxjs/operators";
 import type { DieValue } from "../../../models/src/model/dice";
 import type { IndexedYahtzee, IndexedYahtzeeSpecs } from "./game";
 import type { LowerSectionKey } from "../../../models/src/model/yahtzee.score";
+import axios from "axios";
 
 // Headers for API requests
 const headers = {
@@ -12,6 +13,21 @@ const headers = {
 
 // Subject to emit API updates
 const apiSubject = new Subject<any>();
+
+// Observable for API updates
+export const apiUpdates$ = apiSubject.asObservable();
+
+// Subscribe to API updates
+apiUpdates$
+  .pipe(
+    map((update) => {
+      console.log("[API] Update received:", update);
+      return update;
+    })
+  )
+  .subscribe((update) => {
+    console.log("[API] Update:", update);
+  });
 
 // Utility function to create an Observable for fetch requests
 function apiCall<T>(url: string, options: RequestInit): Observable<T> {
@@ -79,6 +95,11 @@ function performAction<T>(game: IndexedYahtzee, action: any): Observable<T> {
   return post<T>(`http://localhost:8080/games/${game.id}/actions`, action);
 }
 
+export const fetchGames = createAsyncThunk("games/fetchGames", async () => {
+  const response = await axios.get("/api/games");
+  return response.data;
+});
+
 // Reroll dice in a game
 export function reroll(
   game: IndexedYahtzee,
@@ -101,5 +122,6 @@ export function register(
   });
 }
 
-// Observable for API updates
-export const apiUpdates$ = apiSubject.asObservable();
+function createAsyncThunk(arg0: string, arg1: () => Promise<any>) {
+  throw new Error("Function not implemented.");
+}
